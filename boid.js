@@ -144,4 +144,116 @@ class Boid {
             return createVector(0, 0);
         }
     }
+
+    seek2(target, arrival = false) {
+        let force = p5.Vector.sub(target, this.pos);
+        let desiredSpeed = this.maxSpeed;
+        if (arrival) {
+            let slowRadius = 100;
+            let distance = force.mag();
+            if (distance < slowRadius) {
+                desiredSpeed = map(distance, 0, slowRadius, 0, this.maxSpeed);
+            }
+        }
+        force.setMag(desiredSpeed);
+        force.sub(this.vel);
+        force.limit(this.maxForce);
+        return force;
+    }
+    arrive(target) {
+        // A vector pointing from the location to the target
+        let desired = p5.Vector.sub(target, this.position);
+        let d = desired.mag();
+        // Scale with arbitrary damping within 100 pixels
+        if (d < 100) {
+            var m = map(d, 0, 100, 0, this.maxspeed);
+            desired.setMag(m);
+        } else {
+            desired.setMag(this.maxspeed);
+        }
+
+        // Steering = Desired minus Velocity
+        let steer = p5.Vector.sub(desired, this.velocity);
+        steer.limit(this.maxforce); // Limit to maximum steering force
+        this.applyForce(steer);
+    }
+    update(auto, walls) {
+        if (auto) {
+            this.position.add(this.velocity);
+            //this.velocity = p5.Vector.fromAngle(this.rotation);
+            this.velocity.add(this.acceleration);
+            this.velocity.limit(this.maxSpeed);
+            this.acceleration.mult(0);
+        } else {
+            this.velocity = p5.Vector.fromAngle(this.rotation);
+            //console.log(this.rotation, this.velocity.heading())
+            this.velocity.mult(this.speed);
+            this.velocity.limit(this.maxSpeed);
+            this.position.add(this.velocity);
+            this.ray.pos = this.position;
+            this.ray.dir = p5.Vector.fromAngle(this.rotation);
+
+            this.ray.show(walls);
+            //console.log(this.ray.vertices)
+            this.rayvertices = this.ray.vertices;
+        }
+        // Wrap around the canvas
+        if (this.position.x > width) {
+            this.position.x = 0;
+        } else if (this.position.x < 0) {
+            this.position.x = width;
+        }
+        if (this.position.y > height) {
+            this.position.y = 0;
+        } else if (this.position.y < 0) {
+            this.position.y = height;
+        }
+        this.sprite.velocity = this.velocity;
+        this.position = this.sprite.position;
+        this.sprite.rotation = (this.velocity.heading() / PI) * 180;
+    }
+
+    applyForce(force) {
+        this.acceleration.add(force);
+    }
+
+    show() {
+        //stroke(255);
+        strokeWeight(2);
+        fill(255, 50);
+        if (this.type == "pred") {
+            fill(255, 0, 0);
+        }
+        ellipse(this.position.x, this.position.y, 8);
+    }
+
+    flee(preds) {
+        let pr = 200;
+        let steer = createVector();
+        let total = 0;
+
+        for (const other of preds) {
+            let distance = dist(
+                this.position.x,
+                this.position.y,
+                other.position.x,
+                other.position.y
+            );
+            if (other !== this && distance < pr) {
+                let difference = p5.Vector.sub(this.position, other.position);
+                difference.div(distance / 8);
+                steer.add(difference);
+                total++;
+            }
+        }
+
+        if (total > 0) {
+            //steering.div(total);   //redundant, but still
+            steer.setMag(this.maxSpeed); //desired velocity
+            steer.sub(this.velocity); //calculate force
+            steer.limit(this.maxForce);
+        }
+
+        return steer;
+    }
 }

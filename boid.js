@@ -256,4 +256,133 @@ class Boid {
 
         return steer;
     }
+    track(boidlist) {
+        let pr = 400;
+        let steer = createVector();
+        let total = 0;
+        let short = 10000;
+
+        for (const other of boidlist) {
+            let distance = dist(
+                this.position.x,
+                this.position.y,
+                other.position.x,
+                other.position.y
+            );
+            if (other !== this && distance < pr && distance < short) {
+                short = distance;
+                steer.x = other.position.x;
+                steer.y = other.position.y;
+                //console.log(steer)
+                total++;
+
+                //   let difference = p5.Vector.sub(this.position, other.position);
+                // difference.div( - distance / 8);
+                // steer.add(difference);
+            }
+        }
+
+        if (total > 0) {
+            //console.log(steer, total)
+            //steering.div(total);   //redundant, but still
+            steer.sub(this.position);
+            steer.setMag(this.maxSpeed); //desired velocity
+            steer.sub(this.velocity); //calculate force
+            steer.limit(this.maxForce);
+        }
+
+        return steer;
+    }
+    follow(boidlist) {
+        let pr = 400;
+        let steer = createVector();
+        let total = 0;
+        let short = 10000;
+        let newdist = createVector();
+        let targetpos = createVector();
+        for (const other of boidlist) {
+            let distance = dist(
+                this.position.x,
+                this.position.y,
+                other.position.x,
+                other.position.y
+            );
+
+            if (other !== this && distance < pr && distance < short) {
+                //newdist = p5.Vector.sub(other.position, this.position);
+                //newdist.sub(other.velocity)
+                //steer = p5.Vector.sub()
+                //newdist.sub(other.velocity);
+                let temp2 = createVector(other.velocity.x, other.velocity.y);
+                temp2.mult(30);
+                let temp = p5.Vector.sub(other.position, temp2);
+                newdist = p5.Vector.sub(temp, this.position);
+                //newdist.sub(temp);
+                //console.log(other.velocity)
+                push();
+                fill("green");
+                circle(temp.x, temp.y, 10);
+                pop();
+                short = distance;
+                steer.x = other.position.x;
+                steer.y = other.position.y;
+                targetpos.x = other.position.x;
+                targetpos.y = other.position.y;
+
+                //console.log(steer)
+                total++;
+
+                //   let difference = p5.Vector.sub(this.position, other.position);
+                // difference.div( - distance / 8);
+                // steer.add(difference);
+            }
+        }
+
+        if (total > 0) {
+            //console.log(steer, total)
+            //steering.div(total);   //redundant, but still
+            steer.sub(this.position);
+            steer.setMag(this.maxSpeed); //desired velocity
+            steer.sub(this.velocity); //calculate force
+            steer.limit(this.maxForce);
+
+            newdist.setMag(this.maxSpeed); //desired velocity
+            newdist.sub(this.velocity); //calculate force
+            newdist.limit(this.maxForce);
+        }
+
+        //this.prevpos = createVector(this.position.x, this.position.y);
+        return newdist;
+    }
+
+    separation(boids) {
+        let perceptionRadius = 50;
+        let steering = createVector();
+        let total = 0;
+
+        for (const other of boids) {
+            let distance = dist(
+                this.position.x,
+                this.position.y,
+                other.position.x,
+                other.position.y
+            );
+
+            if (other !== this && distance < perceptionRadius) {
+                let difference = p5.Vector.sub(this.position, other.position);
+                difference.div(distance);
+                steering.add(difference);
+                total++;
+            }
+        }
+
+        if (total > 0) {
+            steering.div(total); //redundant, but still
+            steering.setMag(this.maxSpeed); //desired velocity
+            steering.sub(this.velocity); //calculate force
+            steering.limit(this.maxForce);
+        }
+
+        return steering;
+    }
 }

@@ -385,4 +385,135 @@ class Boid {
 
         return steering;
     }
+    cohesion(boids) {
+        let perceptionRadius = 100;
+        let steering = createVector();
+        let total = 0;
+
+        for (const other of boids) {
+            let distance = dist(
+                this.position.x,
+                this.position.y,
+                other.position.x,
+                other.position.y
+            );
+
+            if (other !== this && distance < perceptionRadius) {
+                steering.add(other.position);
+                total++;
+            }
+        }
+
+        if (total > 0) {
+            steering.div(total); //average
+            steering.sub(this.position); //desired velocity
+            steering.setMag(this.maxSpeed);
+            steering.sub(this.velocity); //calculate force
+            steering.limit(this.maxForce);
+        }
+
+        return steering;
+    }
+    alignment(boids) {
+        let perceptionRadius = 50;
+        let steering = createVector();
+        let total = 0;
+
+        for (const other of boids) {
+            let distance = dist(
+                this.position.x,
+                this.position.y,
+                other.position.x,
+                other.position.y
+            );
+
+            if (other !== this && distance < perceptionRadius) {
+                steering.add(other.velocity);
+                total++;
+            }
+        }
+
+        if (total > 0) {
+            steering.div(total); //average
+            steering.setMag(this.maxSpeed); //desired velocity
+            steering.sub(this.velocity); //calculate force
+            steering.limit(this.maxForce);
+        }
+
+        return steering;
+    }
+    show5() {
+        strokeWeight(2);
+        fill(255, 50);
+        if (this.type == "pred") {
+            fill(255, 0, 0);
+        }
+        ellipse(this.position.x, this.position.y, 15);
+    }
+    flock(boids, preds, walls, ctrl) {
+        let sep = this.separation(boids);
+        let coh = this.cohesion(boids);
+        let ali = this.alignment(boids);
+
+        if (this.type == "pred") {
+            let tra = this.follow(boids);
+            //console.log(tra)
+            //this.seek(boids[0]);
+
+            if (ctrl) {
+                let arr = [];
+                for (let boid of boids) {
+                    if (this.inrange(boid)) {
+                        arr.push(boid);
+                        //console.log(13)
+                    }
+                }
+                for (let boid of arr) {
+                    boid.show();
+                }
+            } else {
+                //predator
+                if (this.isUnobstructed(boids[0].position, walls)) {
+                    this.applyForce(tra);
+                    this.applyForce(ali);
+                    this.show5();
+                }
+            }
+            for (let boid of boids) {
+                if (this.sprite.colliding(boid.sprite)) {
+                    //console.log(31313)
+                    return true;
+                }
+            }
+        } else {
+            let ar = [];
+            this.applyForce(sep);
+            for (let pred of preds) {
+                if (this.isUnobstructed(pred.position, walls)) {
+                    //console.log(pred)
+                    ar.push(pred);
+                }
+            }
+            let pre = this.flee(ar);
+            if (millis() - this.lastmillis > 5000) {
+                //console.log(ar)
+                this.lastmillis = millis();
+            }
+
+            for (let a of ar) {
+                //ar.show();
+            }
+            for (let pred of preds) {
+                if (this.sprite.colliding(pred.sprite)) {
+                    return true;
+                }
+            }
+            this.applyForce(pre);
+            //console.log(3141)
+        }
+
+        //this.applyForce(coh);
+
+        //this.prevpos = this.position
+    }
 }

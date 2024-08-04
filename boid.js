@@ -516,4 +516,68 @@ class Boid {
 
         //this.prevpos = this.position
     }
+    inrange(boid) {
+        let x = boid.position.x,
+            y = boid.position.y;
+        let vertices = this.rayvertices;
+        // console.log(this.rayvertices)
+        let inside = false;
+        for (let i = 0, j = vertices.length - 1; i < vertices.length; j = i++) {
+            let xi = vertices[i].x,
+                yi = vertices[i].y;
+            let xj = vertices[j].x,
+                yj = vertices[j].y;
+
+            // Check if point is exactly on a vertex
+            if ((x === xi && y === yi) || (x === xj && y === yj)) {
+                return true; // Can be considered inside or on the boundary
+            }
+
+            // Check if the point is inside the edge (xi, yi) -> (xj, yj)
+            let intersect =
+                yi > y != yj > y && x < ((xj - xi) * (y - yi)) / (yj - yi) + xi;
+            if (intersect) inside = !inside;
+        }
+
+        return inside;
+    }
+
+    isUnobstructed(origPoint, edges) {
+        //work on this tmr
+        //console.log(origPoint, origPoint, this.position, )
+        for (let edge of edges) {
+            //console.log(edge.a.x)
+            if (
+                collideLineLine(
+                    origPoint.x,
+                    origPoint.y,
+                    this.position.x,
+                    this.position.y,
+                    edge.a.x,
+                    edge.a.y,
+                    edge.b.x,
+                    edge.b.y
+                )
+            ) {
+                //weird bug
+                //console.log(1)
+                return false; // The path is obstructed if any edge intersects
+            }
+        }
+        return true; // Unobstructed if no edges intersect
+    }
+}
+function doLinesIntersect(p1, q1, p2, q2) {
+    // Calculate parts of the equations for the segments
+    let det, gamma, lambda;
+    det = (q1.x - p1.x) * (q2.y - p2.y) - (q2.x - p2.x) * (q1.y - p1.y);
+    if (det === 0) {
+        return false; // lines are parallel
+    } else {
+        lambda =
+            ((q2.y - p2.y) * (q2.x - p1.x) + (p2.x - q2.x) * (q2.y - p1.y)) / det;
+        gamma =
+            ((p1.y - q1.y) * (q2.x - p1.x) + (q1.x - p1.x) * (q2.y - p1.y)) / det;
+        return 0 < lambda && lambda < 1 && 0 < gamma && gamma < 1; // lines intersect
+    }
 }
